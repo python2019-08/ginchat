@@ -6,7 +6,7 @@ import (
 	// package gindemo/route is not in std (C:\Programs\go\src\gindemo)
 	//-------------------------------
 	// gostudy "gindemo/go-study" // for calling gostudy.Simple_ginDemo()
-	"ginchat/test_gindemo/route"
+	"ginchat/test/gindemo/route"
 
 	"github.com/gin-gonic/gin"
 	// "net/http"
