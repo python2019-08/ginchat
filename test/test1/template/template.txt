@@ -1,0 +1,4 @@
+Hello, my name is {{.Name}} and I am {{.Age}} years old.
+I live in {{index .Features 1}}, {{index .Features 2}}.
+
+{{index .Features 0}}

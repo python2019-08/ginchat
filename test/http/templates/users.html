@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>用户列表</title>
+</head>
+<body>
+    <h1>用户列表</h1>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>姓名</th>
+            <th>邮箱</th>
+            <th>状态</th>
+        </tr>
+        {{range .}}
+        <tr>
+            <td>{{.ID}}</td>
+            <td>{{.Name}}</td>
+            <td>{{.Email}}</td>
+            <td>{{if .IsActive}}活跃{{else}}非活跃{{end}}</td>
+        </tr>
+        {{end}}
+    </table>
+</body>
+</html>

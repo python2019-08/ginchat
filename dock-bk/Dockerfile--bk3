@@ -1,0 +1,37 @@
+FROM alpine:3.20
+
+# RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf
+# ------------
+# echo -n | openssl s_client -connect 127.0.0.1:8123 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' > proxy.crt
+
+RUN apk add --no-cache ca-certificates
+
+# 将代理证书添加到信任存储（假设证书文件已复制到容器内）
+COPY proxy.crt /usr/local/share/ca-certificates/
+RUN update-ca-certificates
+
+# ------------
+ENV GOLANG_VERSION 1.24.2
+
+# don't auto-upgrade the gotoolchain
+# https://github.com/docker-library/golang/issues/472
+ENV GOTOOLCHAIN=local
+
+ENV GOPATH /go
+ENV PATH $GOPATH/bin:/usr/local/go/bin:$PATH
+# (see notes above about "COPY --link")
+# COPY --from=build --link /target/ /
+RUN mkdir -p "$GOPATH/src" "$GOPATH/bin" && chmod -R 1777 "$GOPATH"
+
+# # 安装wget用于测试
+RUN apk add --no-cache wget
+
+# 添加代理环境变量
+ENV http_proxy=http://192.168.1.107:8123
+ENV https_proxy=http://192.168.1.107:8123
+ENV GOPROXY=https://goproxy.cn,direct
+
+ 
+WORKDIR $GOPATH
+
+# ============================================

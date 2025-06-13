@@ -1,11 +1,12 @@
 package main
 
-import (
-	"ginchat/models"
-	"ginchat/test"
-)
+import "ginchat/router"
 
 func main() {
-	models.Test_gorm_sqlite()
-	test.DB_sqlite3()
+	// dbtest.Test_gorm_mysql()
+
+	r := router.Router()
+	r.Run(":8081") // 1isten and serve on 0.0.0.0:8080 default（forwindows"localhost:8080")
 }
+
+// ------------------

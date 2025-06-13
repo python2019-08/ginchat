@@ -1,0 +1,26 @@
+# 构建阶段（如果需要编译Go代码）
+FROM alpine:3.20 AS build
+# RUN echo "nameserver 8.8.8.8" > /etc/resolv.conf
+ENV PATH /usr/local/go/bin:$PATH
+ENV GOLANG_VERSION 1.24.2
+
+# 安装Go（如果需要编译Go代码）
+RUN apk add --no-cache go
+
+# 假设这里有Go代码编译...
+
+# 最终运行阶段
+FROM alpine:3.20
+
+# 复制构建结果（如果有）
+# COPY --from=build /path/to/your/binary /app/
+
+# 设置代理（在运行时容器中）
+ENV http_proxy=http://192.168.1.107:8123
+ENV https_proxy=http://192.168.1.107:8123
+
+# 安装wget用于测试
+RUN apk add --no-cache wget
+
+# 定义容器启动时执行的命令
+CMD ["wget", "gmail.com"]

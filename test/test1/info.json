@@ -1,0 +1,30 @@
+[
+    {
+        "nameXX": "Golang",
+        "urlXX": "http://c.biancheng.net/golang/",
+        "courseXX": [
+            "http://c.biancheng.net/cplus/",
+            "http://c.biancheng.net/linux_tutorial/"
+        ]
+    },
+    {
+        "nameXX": "Java",
+        "urlXX": "http://c.biancheng.net/java/",
+        "courseXX": [
+            "http://c.biancheng.net/socket/",
+            "http://c.biancheng.net/python/",
+            "http://c11.biancheng.net/python/",
+            "http://c12.biancheng.net/python/"
+        ]
+    },
+    {
+        "nameXX": "c#",
+        "urlXX": "http://csharp.biancheng.net/java/",
+        "courseXX": [
+            "http://csharp1.biancheng.net/socket/",
+            "http://csharp2.biancheng.net/python/",
+            "http://csharp3.biancheng.net/python/",
+            "http://csharp4.biancheng.net/python/"
+        ]
+    }
+]

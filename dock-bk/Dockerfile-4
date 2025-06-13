@@ -1,0 +1,5 @@
+# Dockerfile
+FROM alpine:latest
+COPY myapp /hahah/
+# CMD ["ls" ,"-l", "/hahah"]
+CMD ["sh", "-c", "ls -l /hahah && while true; do sleep 1; done"]
