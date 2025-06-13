@@ -1,6 +1,9 @@
 package main
 
-import "ginchat/router"
+import (
+	"ginchat/router"
+	// dbtest "ginchat/test/db"  // for dbtest.Test_gorm_mysql()
+)
 
 func main() {
 	// dbtest.Test_gorm_mysql()

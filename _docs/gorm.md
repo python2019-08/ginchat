@@ -217,3 +217,290 @@ func main() {
 
 在设计数据库模型时，建议明确指定表名，避免因 GORM 默认规则变化导致的兼容性问题。
 
+======================================================
+# 3.Incorrect datetime value: '0000-00-00' for column 'login_out_time' 
+
+```sh
+test_gorm_mysql.go:27 Error 1292 (22007): Incorrect datetime value: '0000-00-00' for column 'login_out_time' at row 1
+[0.884ms] [rows:0] INSERT INTO `user_basic` (`created_at`,`updated_at`,`deleted_at`,`name`,`pass_word`,`phone`,`email`,`identity`,`client_ip`,`client_port`,`login_time`,`heartbeat_time`,`login_out_time`,`is_logout`,`device_info`) VALUES ('2025-06-13 22:24:34.184','2025-06-13 22:24:34.184',NULL,'申专','','','','','','',0,0,'0000-00-00 00:00:00',false,'')
+```
+
+### MySQL "Incorrect datetime value" 错误解决方案
+
+#### **一、错误原因**
+这个错误是由于 MySQL 不接受 `'0000-00-00'` 作为合法的 `DATETIME` 值导致的。从 MySQL 5.7 开始，默认配置下：
+- `strict_mode` 被启用，禁止插入无效的日期值。
+- `DATETIME` 字段不允许为 `NULL` 时，必须有合法值。
+
+在你的案例中，`login_out_time` 字段被设置为 `'0000-00-00 00:00:00'`，这在严格模式下是不合法的。
+
+
+#### **二、解决方案**
+
+##### 1. **修改数据库连接参数**
+在连接 MySQL 时，添加 `parseTime=true&loc=Local&sql_mode=ALLOW_INVALID_DATES` 参数：
+```go
+dsn := "user:pass@tcp(127.0.0.1:3306)/dbname?parseTime=true&loc=Local&sql_mode=ALLOW_INVALID_DATES"
+db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+```
+- `sql_mode=ALLOW_INVALID_DATES`：允许插入 `'0000-00-00'` 这样的零值。
+
+##### 2. **将字段设置为可空（NULL）**
+在模型中，将 `login_out_time` 类型改为指针：
+```go
+type UserBasic struct {
+    gorm.Model
+    // 其他字段...
+    LoginOutTime *time.Time `gorm:"column:login_out_time"`
+}
+```
+- 插入时，若值为 `nil`，数据库会存储为 `NULL`。
+
+##### 3. **使用默认值**
+在模型中为 `login_out_time` 设置默认值：
+```go
+type UserBasic struct {
+    gorm.Model
+    // 其他字段...
+    LoginOutTime time.Time `gorm:"column:login_out_time;default:CURRENT_TIMESTAMP"`
+}
+```
+- 若插入时未指定值，会自动使用当前时间。
+
+##### 4. **插入合法的日期值**
+确保插入时提供合法的日期，例如使用 `time.Time` 类型：
+```go
+user := UserBasic{
+    // 其他字段...
+    LoginOutTime: time.Now(),  // 或其他合法时间
+}
+db.Create(&user)
+```
+
+
+#### **三、验证与测试**
+1. **检查 MySQL 版本**：
+   ```sql
+   SELECT VERSION();
+   ```
+   - MySQL 5.7+ 默认启用严格模式，需特别注意。
+
+2. **查看当前 SQL_MODE**：
+   ```sql
+   SELECT @@sql_mode;
+   ```
+   - 若包含 `STRICT_TRANS_TABLES`，则需要调整。
+
+3. **测试插入语句**：
+   ```sql
+   SET sql_mode='';  -- 临时禁用严格模式
+   INSERT INTO user_basic (login_out_time) VALUES ('0000-00-00 00:00:00');
+   
+   SET sql_mode='STRICT_TRANS_TABLES';  -- 恢复严格模式
+   INSERT INTO user_basic (login_out_time) VALUES ('0000-00-00 00:00:00');  -- 这会报错
+   ```
+
+
+#### **四、最佳实践**
+1. **优先使用可空字段（NULL）**  
+   - 对于可能没有值的日期字段（如登录退出时间），使用 `*time.Time` 类型。
+
+2. **避免依赖零值日期**  
+   - `'0000-00-00'` 是 MySQL 特有的表示方式，不具备跨数据库兼容性。
+
+3. **统一日期格式**  
+   - 使用 Go 的 `time.Time` 类型与数据库交互，避免手动处理字符串格式。
+
+4. **配置连接参数**  
+   - 在连接字符串中显式设置 `sql_mode`，确保环境一致性。
+
+
+#### **五、修复示例代码**
+```go
+type UserBasic struct {
+    gorm.Model
+    // 其他字段...
+    LoginOutTime *time.Time `gorm:"column:login_out_time"`  // 改为指针类型
+}
+
+// 创建用户时
+user := UserBasic{
+    // 其他字段...
+    LoginOutTime: nil,  // 初始未退出，存储为 NULL
+}
+db.Create(&user)
+
+// 用户退出时
+now := time.Now()
+db.Model(&user).Update("login_out_time", &now)  // 更新为当前时间
+```
+
+
+通过以上方法，你可以解决 `'0000-00-00'` 日期值错误，并建立更健壮的日期处理机制。
+
+=============================================================
+# 4.Invalid default value for 'login_out_time '
+
+```go
+type UserBasic struct {
+	gorm.Model
+	Name          string 
+	LoginOutTime  time.Time `gorm:"column:login_out_time ;default:CURRENT_TIMESTAMP"  json:"login_out_time"`
+}
+```
+但是
+```sh
+Error 1067 (42000): Invalid default value for 'login_out_time '
+[0.083ms] [rows:0] CREATE TABLE `user_basic` (`id` bigint unsigned AUTO_INCREMENT,`created_at` datetime(3) NULL,`updated_at` datetime(3) NULL,`deleted_at` datetime(3) NULL,`name` longtext,`pass_word` longtext,`phone` longtext,`email` longtext,`identity` longtext,`client_ip` longtext,`client_port` longtext,`login_time` datetime(3) NULL,`heartbeat_time` datetime(3) NULL,`login_out_time ` datetime(3) NULL DEFAULT CURRENT_TIMESTAMP,`is_logout` boolean,`device_info` longtext,PRIMARY KEY (`id`),INDEX `idx_user_basic_deleted_at` (`deleted_at`))
+2025/06/13 22:45:25 db.AutoMigrate() error: Error 1067 (42000): Invalid default value for 'login_out_time '
+```
+
+
+### MySQL "Invalid default value" 错误解决方案
+
+#### **一、错误原因**
+这个错误是由于 MySQL 对 `DATETIME` 类型的默认值有严格限制导致的：
+
+1. **版本限制**：  
+   - MySQL 5.7 及以下版本：`DATETIME` 默认不支持 `CURRENT_TIMESTAMP` 作为默认值（`TIMESTAMP` 类型支持）。
+   - MySQL 8.0+：允许 `DATETIME` 使用 `DEFAULT CURRENT_TIMESTAMP`，但需显式设置 `explicit_defaults_for_timestamp=1`。
+
+2. **字段类型冲突**：  
+   - 你的模型中 `LoginOutTime` 定义为 `time.Time`（非指针），GORM 会生成 `NOT NULL` 约束，但未显式指定 `NOT NULL`，导致冲突。
+
+3. **空格问题**：  
+   - 标签中 `column:login_out_time ;default` 存在多余空格，可能导致 SQL 解析错误。
+
+
+#### **二、解决方案**
+
+##### 1. **修改字段类型为 `TIMESTAMP`**
+`TIMESTAMP` 类型在 MySQL 中支持 `DEFAULT CURRENT_TIMESTAMP`：
+```go
+type UserBasic struct {
+    gorm.Model
+    // 其他字段...
+    LoginOutTime time.Time `gorm:"column:login_out_time;type:timestamp;default:CURRENT_TIMESTAMP" json:"login_out_time"`
+}
+```
+
+##### 2. **显式设置 `NOT NULL` 约束**
+确保字段非空，并使用 `DEFAULT CURRENT_TIMESTAMP`：
+```go
+type UserBasic struct {
+    gorm.Model
+    // 其他字段...
+    LoginOutTime time.Time `gorm:"column:login_out_time;not null;default:CURRENT_TIMESTAMP" json:"login_out_time"`
+}
+```
+
+##### 3. **使用 `DATETIME` 并调整 MySQL 配置**
+若必须使用 `DATETIME`，需修改 MySQL 配置（`my.cnf`）：
+```ini
+[mysqld]
+explicit_defaults_for_timestamp=1
+```
+然后重启 MySQL 服务。
+
+##### 4. **删除默认值，由代码控制**
+移除默认值，在创建记录时显式设置时间：
+```go
+type UserBasic struct {
+    gorm.Model
+    // 其他字段...
+    LoginOutTime time.Time `gorm:"column:login_out_time" json:"login_out_time"`
+}
+
+// 创建时设置默认值
+user := UserBasic{
+    // 其他字段...
+    LoginOutTime: time.Now(),
+}
+db.Create(&user)
+```
+
+##### 5. **使用可空类型（推荐）**
+将字段改为指针类型，允许 `NULL` 值：
+```go
+type UserBasic struct {
+    gorm.Model
+    // 其他字段...
+    LoginOutTime *time.Time `gorm:"column:login_out_time" json:"login_out_time"`
+}
+
+// 创建时未退出，默认为 NULL
+user := UserBasic{
+    // 其他字段...
+    LoginOutTime: nil,
+}
+db.Create(&user)
+```
+
+
+#### **三、验证与测试**
+1. **检查 MySQL 版本**：
+   ```sql
+   SELECT VERSION();
+   ```
+   - 若为 5.7 及以下，优先使用 `TIMESTAMP` 或可空 `DATETIME`。
+
+2. **查看当前 SQL_MODE**：
+   ```sql
+   SELECT @@sql_mode;
+   ```
+   - 确保不包含 `NO_ZERO_DATE` 或 `STRICT_TRANS_TABLES` 限制。
+
+3. **测试表创建**：
+   ```sql
+   CREATE TABLE test (
+       login_out_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP  -- 有效
+       -- 或
+       login_out_time DATETIME DEFAULT CURRENT_TIMESTAMP   -- 仅 MySQL 8.0+ 有效
+   );
+   ```
+
+
+#### **四、最佳实践**
+1. **优先使用 `TIMESTAMP` 类型**  
+   - 若需要自动更新时间戳，`TIMESTAMP` 是更好的选择。
+
+2. **明确字段约束**  
+   - 避免隐式约束，显式指定 `NOT NULL` 或 `NULL`。
+
+3. **保持数据库兼容性**  
+   - 若项目可能迁移到其他数据库（如 PostgreSQL），避免依赖 MySQL 特定特性。
+
+4. **代码与数据库解耦**  
+   - 时间逻辑尽量在代码层处理，而非依赖数据库默认值。
+
+
+#### **五、修复示例代码**
+```go
+// 方案 1：使用 TIMESTAMP 类型
+type UserBasic struct {
+    gorm.Model
+    // 其他字段...
+    LoginOutTime time.Time `gorm:"column:login_out_time;type:timestamp;default:CURRENT_TIMESTAMP" json:"login_out_time"`
+}
+
+// 方案 2：使用可空 DATETIME
+type UserBasic struct {
+    gorm.Model
+    // 其他字段...
+    LoginOutTime *time.Time `gorm:"column:login_out_time" json:"login_out_time"`
+}
+
+// 创建用户时
+user := UserBasic{
+    // 其他字段...
+    LoginOutTime: nil,  // 初始未退出
+}
+db.Create(&user)
+
+// 用户退出时
+now := time.Now()
+db.Model(&user).Update("login_out_time", &now)
+```
+
+
+通过以上方法，你可以解决 `Invalid default value` 错误，并建立更健壮的日期字段处理机制。
