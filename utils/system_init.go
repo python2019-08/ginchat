@@ -17,8 +17,7 @@ func InitConfig() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("config app:", viper.Get("app"))
-	fmt.Println("config mysql:", viper.Get("mysql"))
+	fmt.Println("config app inited")
 
 }
 
@@ -29,5 +28,6 @@ func InitMySQL() {
 	if err != nil {
 		panic("failed to connect database")
 	}
+	fmt.Println("MySQL inited......")
 
 }
