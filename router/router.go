@@ -11,5 +11,7 @@ func Router() *gin.Engine {
 
 	// http://localhost:8081/index
 	r.GET("/index", service.GetIndex)
+	// http://localhost:8081/user/getUserList
+	r.GET("/user/getUserList", service.GetUserList)
 	return r
 }

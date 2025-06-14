@@ -50,6 +50,7 @@ func Test_gorm_mysql() {
 	fmt.Println("db.Unscoped().First():RowsAffected", result.RowsAffected,
 		".......result.Error=", result.Error,
 		".......user1=", user1)
+
 	//db.First（user，"code=?"，"D42"）//查找code字段值为D42的记录
 
 	// Update - 将product的price更新为2oo
@@ -60,6 +61,7 @@ func Test_gorm_mysql() {
 	}
 	fmt.Println("db.Model(user).Update(PassWord=1234):RowsAffected", result.RowsAffected,
 		".......result.Error=", result.Error)
+
 	//Update-更新多个子段
 	//db.Model（&product）.Updates（Product{Price：2o0，Code："F42"}）//仅更新非零值字段
 	//db.Model(&product).Updates(map[string]interface{}f"Price":200,"Code":"F42"})

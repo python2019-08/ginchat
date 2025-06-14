@@ -26,6 +26,7 @@ func Http_template_main() {
 		log.Println("workDir=", workDir)
 	}
 
+	// http://127.0.0.1:8080/users
 	http.HandleFunc("/users", func(w http.ResponseWriter, r *http.Request) {
 		// 模拟数据
 		users := []User{
@@ -35,6 +36,7 @@ func Http_template_main() {
 
 		// 解析模板
 		tmpl := template.Must(template.ParseFiles(workDir + "/test/http/templates/users.html"))
+		// tmpl := template.Must(template.ParseFiles("ginchat/test/http/templates/users.html"))
 
 		// 执行模板，传递数据
 		tmpl.Execute(w, users)

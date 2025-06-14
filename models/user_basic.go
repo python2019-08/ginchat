@@ -2,6 +2,8 @@ package models
 
 import (
 	// "github.com/jinzhu/gorm" // old-version gorm
+	"fmt"
+	"ginchat/utils"
 	"time"
 
 	"gorm.io/gorm" // new-version gorm
@@ -27,4 +29,13 @@ type UserBasic struct {
 // 当你调用 `AutoMigrate` 时，GORM 会根据这个方法的返回值来创建或更新对应的数据库表。
 func (table *UserBasic) TableName() string {
 	return "user_basic"
+}
+
+func GetUserList() []*UserBasic {
+	data := make([]*UserBasic, 10)
+	utils.DB.Find(&data)
+	for _, v := range data {
+		fmt.Println(v)
+	}
+	return data
 }
